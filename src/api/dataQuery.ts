@@ -28,3 +28,19 @@ export function getBlockByHash(blockHash: string) {
     })
     // return block;
 }
+
+export function getTransactionByHash(txHash: string) {
+    return new Promise(function (resolve, reject) {
+        pool.query(
+            'SELECT * FROM transactions WHERE tx_hash = $1',
+            [txHash],
+            (err: { stack: any }, res: any) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(res.rows)
+                }
+            }
+        )
+    })
+}
