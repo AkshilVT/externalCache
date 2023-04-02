@@ -23,6 +23,7 @@ export default async function blockSubs() {
         .subscribe('newBlockHeaders', function (error: any, blockHeader: any) {
             if (!error) {
                 // console.log("New Block: ",blockHeader.number);
+
                 const query = {
                     text: 'INSERT INTO blocks (block_hash, block_number, timestamp, gas_limit, gas_used, miner, transactions_root) VALUES ($1, $2, $3, $4, $5, $6, $7)',
                     values: [
@@ -42,7 +43,56 @@ export default async function blockSubs() {
                         console.log('Inserted block: ', blockHeader.number)
                     }
                 })
+                // Retrieving all blocks transactions
+                console.log('Retrieving all blocks transactions')
+                web3.eth.getBlock(
+                    blockHeader.hash,
+                    true,
+                    (err: any, block: any) => {
+                        if (err) {
+                            console.error('Error retrieving block', err.stack)
+                        } else {
+                            console.log(
+                                'Inserted transactions: ',
+                                block.transactions.length
+                            )
 
+                            block.transactions.forEach((tx: any) => {
+                                const query = {
+                                    text: 'INSERT INTO transactions (block_hash, block_number, tx_hash, tx_from, tx_to, tx_input, tx_nonce, tx_r, tx_s, tx_v) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+                                    values: [
+                                        tx.blockHash,
+                                        tx.blockNumber,
+                                        tx.hash,
+                                        tx.from,
+                                        tx.to,
+                                        tx.input,
+                                        tx.nonce,
+                                        tx.r,
+                                        tx.s,
+                                        tx.v,
+                                    ],
+                                }
+                                pool.query(
+                                    query,
+                                    (err: { stack: any }, res: any) => {
+                                        if (err) {
+                                            console.error(
+                                                'Error executing query',
+                                                err.stack
+                                            )
+                                        } else {
+                                            console.log(
+                                                'Inserted transactions: ',
+                                                tx.hash
+                                            )
+                                        }
+                                    }
+                                )
+                            })
+                        }
+                    }
+                )
                 return
             }
 
@@ -67,4 +117,4 @@ export default async function blockSubs() {
         }
     })
 }
-// blockSubs()
+blockSubs()
