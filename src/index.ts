@@ -1,8 +1,20 @@
 import { getBlockByHash, getTransactionByHash } from './api/dataQuery'
+const bodyParser = require('body-parser')
 
 const express = require('express')
 
 const app = express()
+
+// Set up body-parser middleware to parse JSON-RPC requests
+app.use(bodyParser.json())
+// Middleware function to log incoming requests
+// app.use((req: {
+//     body(body: any): unknown; method: any; path: any;
+// }, res: any, next: () => void) => {
+//   console.log(`Method: ${req.method} Path: ${req.path}`);
+//   console.log(req.body);
+//   next();
+// });
 
 const redis = require('redis')
 let redisClient: {
@@ -34,12 +46,61 @@ app.listen(PORT, () => {
 
 // get blockheader
 app.get('/', async (req: any, res: { send: (arg0: string) => void }) => {
-    const hash = req.query.hash
+    // const hash = req.query.hash
+    const request = req.body
+    console.log('request: ', request)
 
-    const block_details = await getBlockByHash(hash)
+    // const block_details = await getBlockByHash(hash)
     // console.log("r: ", r);
 
-    res.send(JSON.stringify({ status: '200', data: block_details }))
+    res.send(JSON.stringify({ status: '200', data: 'Hello World!' }))
+})
+
+app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
+    const request = req.body
+    if (request.method === 'eth_getBlockByNumber') {
+        console.log(
+            'Request got from: ',
+            req.header('x-forwarded-for') || req.connection.remoteAddress
+        )
+        if (request.params[0] == '0x1') {
+            res.send(
+                JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: request.id,
+                    result: {
+                        baseFeePerGas: 875000000,
+                        difficulty: '131072',
+                        extraData: '0x',
+                        miner: '0x2f14582947E292a2eCd20C430B46f2d27CFE213c',
+                        mixHash:
+                            '0xcd039d5508e92723db0f078b5205da89144e3a6fee3a34124c966f53c35ce42c',
+                        nonce: '0xc7faaf72b4568480',
+                        number: 1,
+                        parentHash:
+                            '0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9',
+                        receiptsRoot:
+                            '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+                        sha3Uncles:
+                            '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
+                        size: 517,
+                        stateRoot:
+                            '0xc91d4ecd59dce3067d340b3aadfc0542974b4fb4db98af39f980a91ea00db9dc',
+                        timestamp: 1634951226,
+                        totalDifficulty: '262144',
+                        transactions: [],
+                        transactionsRoot:
+                            '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
+                        uncles: [],
+                    },
+                })
+            )
+        } else {
+            res.send(
+                JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
+            )
+        }
+    }
 })
 
 app.get(

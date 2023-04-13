@@ -1,13 +1,14 @@
 {
   "name": "externalCache",
   "version": "1.0.0",
+  
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.ts",
     "subs": "nodemon src/subscription.ts",
-    "format": "prettier --write src/**/*.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "format": "prettier --write src/**/*.ts src/**/*.json",
+    "test": "nodemon src/test.ts"
   },
   "keywords": [],
   "author": "",
