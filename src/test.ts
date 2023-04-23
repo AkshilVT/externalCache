@@ -19,7 +19,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:4000'))
 // )
 
 async function getBlock() {
-    const block = await web3.eth.getBlock(3379701)
+    const block = await web3.eth.getBlock(3343892)
 
     console.log(block)
 }

@@ -28,6 +28,24 @@ export function getBlockByHash(blockHash: string) {
     })
     // return block;
 }
+export function getBlockByNumber(blockNumber: number) {
+    return new Promise(function (resolve, reject) {
+        pool.query(
+            'SELECT * FROM blocks WHERE number = $1',
+            [blockNumber],
+            (err: { stack: any }, res: any) => {
+                if (err) {
+                    // console.error('Error executing query', err.stack);
+                    reject(err)
+                } else {
+                    // console.log('Connected to Postgres at', res.rows);
+                    resolve(res.rows)
+                }
+            }
+        )
+    })
+    // return block;
+}
 
 export function getTransactionByHash(txHash: string) {
     return new Promise(function (resolve, reject) {

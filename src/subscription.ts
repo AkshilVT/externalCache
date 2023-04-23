@@ -22,27 +22,6 @@ export default async function blockSubs() {
     var subscription = web3.eth
         .subscribe('newBlockHeaders', function (error: any, blockHeader: any) {
             if (!error) {
-                // console.log("New Block: ",blockHeader.number);
-
-                const query = {
-                    text: 'INSERT INTO blocks (block_hash, block_number, timestamp, gas_limit, gas_used, miner, transactions_root) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                    values: [
-                        blockHeader.hash,
-                        blockHeader.number,
-                        blockHeader.timestamp,
-                        blockHeader.gasLimit,
-                        blockHeader.gasUsed,
-                        blockHeader.miner,
-                        blockHeader.transactionsRoot,
-                    ],
-                }
-                pool.query(query, (err: { stack: any }, res: any) => {
-                    if (err) {
-                        console.error('Error executing query', err.stack)
-                    } else {
-                        console.log('Inserted block: ', blockHeader.number)
-                    }
-                })
                 // Retrieving all blocks transactions
                 console.log('Retrieving all blocks transactions')
                 web3.eth.getBlock(
@@ -55,6 +34,50 @@ export default async function blockSubs() {
                             console.log(
                                 'Inserted transactions: ',
                                 block.transactions.length
+                            )
+                            const query = {
+                                text: 'INSERT INTO blocks VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)',
+                                values: [
+                                    block.baseFeePerGas,
+                                    block.difficulty,
+                                    block.extraData,
+                                    block.gasLimit,
+                                    block.gasUsed,
+                                    block.hash,
+                                    block.logsBloom,
+                                    block.miner,
+                                    block.mixHash,
+                                    block.nonce,
+                                    block.number,
+                                    block.parentHash,
+                                    block.receiptsRoot,
+                                    block.sha3Uncles,
+                                    block.size,
+                                    block.stateRoot,
+                                    block.timestamp,
+                                    block.totalDifficulty,
+                                    block.transactions,
+                                    block.transactionsRoot,
+                                    block.uncles,
+                                    block.withdrawals,
+                                    block.withdrawalsRoot,
+                                ],
+                            }
+                            pool.query(
+                                query,
+                                (err: { stack: any }, res: any) => {
+                                    if (err) {
+                                        console.error(
+                                            'Error executing query',
+                                            err.stack
+                                        )
+                                    } else {
+                                        console.log(
+                                            'Inserted block: ',
+                                            blockHeader.number
+                                        )
+                                    }
+                                }
                             )
 
                             block.transactions.forEach((tx: any) => {

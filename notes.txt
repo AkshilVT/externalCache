@@ -1,0 +1,2 @@
+INDEX- fetch keys from redis to check if in cache
+add wrtieout to redis and Postgres from INFURA

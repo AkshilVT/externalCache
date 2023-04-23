@@ -1,31 +1,32 @@
-const Web3 = require('web3')
-require('dotenv').config()
-var Contract = require('web3-eth-contract')
-import Token from './artifacts/Token.json'
-
+import Web3 from 'web3'
+import { readFile } from 'fs/promises'
+const Token = JSON.parse(
+    await readFile(new URL('./Token.json', import.meta.url))
+)
+import dotenv from 'dotenv'
+dotenv.config()
 async function sample() {
-    // log
+    // console.log(process.env.INFURA_API_KEY)
     const network = process.env.ETHEREUM_NETWORK
+    const web3 = new Web3(`http://www.localhost:4000/`)
+
     // const web3 = new Web3(
-    //     new Web3.providers.HTTPProvider(
-    //         `https://www.localhost:4000/`
+    //     new Web3.providers.WebsocketProvider(
+    //         `wss://${network}.infura.io/ws/v3/${process.env.INFURA_API_KEY}`
     //     )
     // )
-    const web3 = new Web3(
-        new Web3.providers.WebsocketProvider(
-            `wss://${network}.infura.io/ws/v3/${process.env.INFURA_API_KEY}`
-        )
-    )
+
     // Contract.setProvider(
     //     `wss://${network}.infura.io/ws/v3/${process.env.INFURA_API_KEY}`
     // )
-    Contract.setProvider(`https://www.localhost:4000/`)
+    // web3.eth.Contract.setProvider(`https://www.localhost:4000/`)
+    // Contract.setProvider(`https://www.localhost:4000/`)
 
     // console.log(
     //     web3.eth.accounts.privateKeyToAccount(process.env.SIGNER_PRIVATE_KEY)
     // )
 
-    var contract = new Contract(
+    var contract = new web3.eth.Contract(
         Token,
         '0x1E8C104D068F22D351859cdBfE41A697A98E6EA2'
     )

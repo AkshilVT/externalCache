@@ -1,4 +1,8 @@
-import { getBlockByHash, getTransactionByHash } from './api/dataQuery'
+import {
+    getBlockByHash,
+    getBlockByNumber,
+    getTransactionByHash,
+} from './api/dataQuery'
 const bodyParser = require('body-parser')
 
 const express = require('express')
@@ -37,13 +41,6 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
 
-// const request = require('request');
-// request('http://www.google.com', function (error: any, response: { statusCode: number; }, body: any) {
-//   if (!error && response.statusCode == 200) {
-//     console.log(body); // Print the google web page.
-//   }
-// });
-
 // get blockheader
 app.get('/', async (req: any, res: { send: (arg0: string) => void }) => {
     // const hash = req.query.hash
@@ -58,48 +55,116 @@ app.get('/', async (req: any, res: { send: (arg0: string) => void }) => {
 
 app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
     const request = req.body
+    // console.log('request: ', request)
+    console.log(
+        'Request got from: ',
+        req.header('x-forwarded-for') || req.connection.remoteAddress
+    )
+
+    /*-----------------------------------------------------------------
+                ETH_GETBLOCKBYNUMBER
+    ------------------------------------------------------------------*/
     if (request.method === 'eth_getBlockByNumber') {
-        console.log(
-            'Request got from: ',
-            req.header('x-forwarded-for') || req.connection.remoteAddress
-        )
-        if (request.params[0] == '0x1') {
+        if (request.params[0] == '0x330614') {
+            try {
+                const cacheResults = await redisClient.get(
+                    request.method + request.params[0]
+                )
+                if (cacheResults) {
+                    console.log('cache hit')
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: JSON.parse(cacheResults),
+                        })
+                    )
+                } else {
+                    console.log('cache miss')
+                    const block_number = parseInt(request.params[0], 16)
+                    let block_details: string[]
+                    block_details = (await getBlockByNumber(
+                        block_number
+                    )) as string[]
+
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: block_details[0],
+                        })
+                    )
+                    const key = request.method + request.params[0]
+                    console.log(
+                        'Write into Cache: ',
+                        await redisClient.set(
+                            key,
+                            JSON.stringify(block_details[0])
+                        )
+                    )
+                }
+            } catch (error) {
+                console.log(error)
+            }
+        } else {
+            console.log(request.params[0])
             res.send(
-                JSON.stringify({
-                    jsonrpc: '2.0',
-                    id: request.id,
-                    result: {
-                        baseFeePerGas: 875000000,
-                        difficulty: '131072',
-                        extraData: '0x',
-                        miner: '0x2f14582947E292a2eCd20C430B46f2d27CFE213c',
-                        mixHash:
-                            '0xcd039d5508e92723db0f078b5205da89144e3a6fee3a34124c966f53c35ce42c',
-                        nonce: '0xc7faaf72b4568480',
-                        number: 1,
-                        parentHash:
-                            '0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9',
-                        receiptsRoot:
-                            '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-                        sha3Uncles:
-                            '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-                        size: 517,
-                        stateRoot:
-                            '0xc91d4ecd59dce3067d340b3aadfc0542974b4fb4db98af39f980a91ea00db9dc',
-                        timestamp: 1634951226,
-                        totalDifficulty: '262144',
-                        transactions: [],
-                        transactionsRoot:
-                            '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421',
-                        uncles: [],
-                    },
-                })
+                JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
             )
+        }
+    } else if (request.method === 'eth_call') {
+        /*-----------------------------------------------------------------
+                ETH_CALL
+    ------------------------------------------------------------------*/
+        console.log('eth_call')
+        if (
+            request.params[0].to ===
+            '0x1e8c104d068f22d351859cdbfe41a697a98e6ea2'
+        ) {
+            if (
+                request.params[0].data ===
+                '0xf46eccc40000000000000000000000004284890d4acd0bcb017ece481b96fd4cb457cac8'
+            ) {
+                res.send(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: request.id,
+                        result: '0x0000000000000000000000000000000000000000000000000000000000000001',
+                    })
+                )
+            } else if (
+                request.params[0].data ===
+                '0x70a082310000000000000000000000004284890d4acd0bcb017ece481b96fd4cb457cac8'
+            ) {
+                res.send(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: request.id,
+                        result: '0x000000000000000000000000000000000000000000679b10238039c2df2aaef3',
+                    })
+                )
+            } else {
+                console.log(request.params[0].data)
+                res.send(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: request.id,
+                        result: null,
+                    })
+                )
+            }
         } else {
             res.send(
                 JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
             )
         }
+    } else {
+        /*-----------------------------------------------------------------
+                ELSE
+    ------------------------------------------------------------------*/
+        res.send(
+            JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
+        )
     }
 })
 
@@ -122,7 +187,6 @@ app.get(
                 }
                 await redisClient.set(hash, JSON.stringify(block_details))
             }
-            // console.log("r: ", r);
 
             res.send(
                 JSON.stringify({
