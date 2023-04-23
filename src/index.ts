@@ -2,7 +2,9 @@ import {
     getBlockByHash,
     getBlockByNumber,
     getTransactionByHash,
+    writeBlockByNumber,
 } from './api/dataQuery'
+import { getBlockByNumberFromINFURA } from './api/infuraQuery'
 const bodyParser = require('body-parser')
 
 const express = require('express')
@@ -65,28 +67,37 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
                 ETH_GETBLOCKBYNUMBER
     ------------------------------------------------------------------*/
     if (request.method === 'eth_getBlockByNumber') {
-        if (request.params[0] == '0x330614') {
-            try {
-                const cacheResults = await redisClient.get(
-                    request.method + request.params[0]
+        try {
+            // Check if the block is in the cache
+            const cacheResults = await redisClient.get(
+                request.method + request.params[0]
+            )
+            // If the block is in the cache, return the cached block
+            if (cacheResults) {
+                console.log('cache hit')
+                res.send(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: request.id,
+                        result: JSON.parse(cacheResults),
+                    })
                 )
-                if (cacheResults) {
-                    console.log('cache hit')
-                    res.send(
-                        JSON.stringify({
-                            jsonrpc: '2.0',
-                            id: request.id,
-                            result: JSON.parse(cacheResults),
-                        })
-                    )
-                } else {
-                    console.log('cache miss')
-                    const block_number = parseInt(request.params[0], 16)
-                    let block_details: string[]
+            }
+            // If the block is not in the cache, get the block from the database and return it
+            else {
+                console.log('cache miss')
+                const block_number = parseInt(request.params[0], 16)
+                let block_details: string[]
+                try {
                     block_details = (await getBlockByNumber(
                         block_number
                     )) as string[]
+                } catch (error) {
+                    block_details = []
+                    console.log(error)
+                }
 
+                if (block_details.length !== 0) {
                     res.send(
                         JSON.stringify({
                             jsonrpc: '2.0',
@@ -94,6 +105,7 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
                             result: block_details[0],
                         })
                     )
+                    // Write the block into the cache
                     const key = request.method + request.params[0]
                     console.log(
                         'Write into Cache: ',
@@ -102,15 +114,32 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
                             JSON.stringify(block_details[0])
                         )
                     )
+                } else {
+                    // If the block is not in the database, fetch from INFURA
+                    console.log('fetch from INFURA')
+                    const block_number = parseInt(request.params[0], 16)
+                    const block = await getBlockByNumberFromINFURA(block_number)
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: block,
+                        })
+                    )
+                    // Write the block into the cache
+                    const key = request.method + request.params[0]
+                    console.log(
+                        'Write into Cache: ',
+                        await redisClient.set(key, JSON.stringify(block))
+                    )
+
+                    // Write the block into the database
+                    const db_write = await writeBlockByNumber(block)
+                    console.log('Write into DB: ', db_write)
                 }
-            } catch (error) {
-                console.log(error)
             }
-        } else {
-            console.log(request.params[0])
-            res.send(
-                JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
-            )
+        } catch (error) {
+            console.log(error)
         }
     } else if (request.method === 'eth_call') {
         /*-----------------------------------------------------------------
