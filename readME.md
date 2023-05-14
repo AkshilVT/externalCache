@@ -42,18 +42,18 @@ When the user calls any function. The call will go to the server and will be pro
 
 -   First the call will be scanned thorugh cache layer(Redis), if there is any data in cache &#8594; return data.
 -   Second the call will be scanned through the database(Postgres), if there is any data in db &#8594; return data and write in cache.
--   Lastly the call will be made to a full node which will give us the data and will write that in cace and db.
+-   Lastly the call will be made to a full node which will give us the data and will write that in cache and db.
 
 One more layer is working in the background that is the subscription layer to the blockchain network. This layer periodically fetches data from blockchain network and stores it in the database.
 
 ## Setup
 
 1.  Clone the repository
-2.  Use your favourite package manager to install dependencies `npm i` or `yarn` or `pnpm i`
+2.  Use your favorite package manager to install dependencies `npm i` or `yarn` or `pnpm i`
 3.  To start the server you can use `pnpm start`
 4.  To start the subscription layer use `pnpm subs`
 
-**Note:** All JS and TS files in this repo (expect api/\*.ts, indes.ts, subscription.ts) are used for testing this server.
+**Note:** All JS and TS files in this repo (expect api/\*.ts, index.ts, subscription.ts) are used for testing this server.
 
 <!-- commands -->
 

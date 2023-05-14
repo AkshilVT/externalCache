@@ -191,7 +191,9 @@ async function checkCacheAndDb(txHash: string) {
                     // console.error('Error executing query', err.stack);
                     reject(err)
                 } else {
-                    console.log('Deleted tx from db')
+                    if (res.rowCount > 0) {
+                        console.log('Deleted tx from db')
+                    }
                     resolve('OK')
                 }
             }
