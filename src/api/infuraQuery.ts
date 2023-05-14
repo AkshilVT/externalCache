@@ -18,3 +18,15 @@ export function getBlockByNumberFromINFURA(blockNumber: number) {
         })
     })
 }
+
+export function ethcallINFURA(to: string, data: string) {
+    return new Promise(function (resolve, reject) {
+        web3.eth.call({ to: to, data: data }, (err: any, res: any) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(res)
+            }
+        })
+    })
+}

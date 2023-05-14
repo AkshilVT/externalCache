@@ -90,6 +90,43 @@ export function writeBlockByNumber(block: any) {
     })
 }
 
+export function getEthCall(to: string, data: string) {
+    return new Promise(function (resolve, reject) {
+        pool.query(
+            'SELECT callresult FROM ecall WHERE callTo = $1 AND callData = $2',
+            [to, data],
+            (err: { stack: any }, res: any) => {
+                if (err) {
+                    // console.error('Error executing query', err.stack);
+                    reject(err)
+                } else {
+                    // console.log('Connected to Postgres at', res.rows);
+                    resolve(res.rows)
+                }
+            }
+        )
+    })
+}
+
+export function writeEthCall(to: string, data: string, result: any) {
+    return new Promise(function (resolve, reject) {
+        pool.query(
+            // 'INSERT INTO ecall (callTo, callData, callResult) VALUES ($1, $2, $3)',
+            'INSERT INTO ecall VALUES ($1, $2, $3)',
+            [to, data, result],
+            (err: { stack: any }, res: any) => {
+                if (err) {
+                    // console.error('Error executing query', err.stack);
+                    reject(err)
+                } else {
+                    // console.log('Connected to Postgres at', res.rows);
+                    resolve('OK')
+                }
+            }
+        )
+    })
+}
+
 export function getTransactionByHash(txHash: string) {
     return new Promise(function (resolve, reject) {
         pool.query(

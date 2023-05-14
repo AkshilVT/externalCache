@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import { readFile } from 'fs/promises'
 const Token = JSON.parse(
-    await readFile(new URL('./Token.json', import.meta.url))
+    await readFile(new URL('./tDAI.json', import.meta.url))
 )
 import dotenv from 'dotenv'
 dotenv.config()
@@ -10,9 +10,6 @@ async function sample() {
     const network = process.env.ETHEREUM_NETWORK
     const web3 = new Web3(`http://localhost:4000/`)
 
-    // const web3 = new Web3(
-    //     new Web3.providers.HttpProvider('http://localhost:4000')
-    // )
     // const web3 = new Web3(
     //     new Web3.providers.WebsocketProvider(
     //         `wss://${network}.infura.io/ws/v3/${process.env.INFURA_API_KEY}`
@@ -33,14 +30,14 @@ async function sample() {
 
     var contract = new web3.eth.Contract(
         Token,
-        '0x1E8C104D068F22D351859cdBfE41A697A98E6EA2'
+        '0x53844F9577C2334e541Aec7Df7174ECe5dF1fCf0'
     )
-    console.log(
-        'mint:',
-        await contract.methods
-            .minters('0x4284890d4AcD0bcb017eCE481B96fD4Cb457CAc8')
-            .call()
-    )
+    // console.log(
+    //     'mint:',
+    //     await contract.methods
+    //         .minters('0x4284890d4AcD0bcb017eCE481B96fD4Cb457CAc8')
+    //         .call()
+    // )
     console.log(
         'bal:',
         await contract.methods

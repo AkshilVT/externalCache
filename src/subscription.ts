@@ -10,6 +10,22 @@ const pool = new Pool({
     port: 5432, // Default port for Postgres
 })
 
+const redis = require('redis')
+let redisClient: {
+    set(hash: any, arg1: string): unknown
+    on: (arg0: string, arg1: (error: any) => void) => void
+    connect: () => any
+    get: (arg0: any) => any
+    del: (arg0: any) => any
+}
+;(async () => {
+    redisClient = redis.createClient()
+
+    redisClient.on('error', (error: any) => console.error(`Error : ${error}`))
+
+    await redisClient.connect()
+})()
+
 export default async function blockSubs() {
     // Configuring the connection to an Ethereum node
     const network = process.env.ETHEREUM_NETWORK
@@ -105,13 +121,25 @@ export default async function blockSubs() {
                                                 err.stack
                                             )
                                         } else {
-                                            console.log(
-                                                'Inserted transactions: ',
-                                                tx.hash
-                                            )
+                                            // console.log(
+                                            //     'Inserted transactions: ',
+                                            //     tx.hash
+                                            // )
                                         }
                                     }
                                 )
+
+                                // clear tx from cache (State root changes everything)
+                                if (tx.from) {
+                                    const TxFrom = tx.from
+                                        .toString()
+                                        .toLowerCase()
+                                    checkCacheAndDb(TxFrom)
+                                }
+                                if (tx.to) {
+                                    const TxTo = tx.to.toString().toLowerCase()
+                                    checkCacheAndDb(TxTo)
+                                }
                             })
                         }
                     }
@@ -141,3 +169,32 @@ export default async function blockSubs() {
     })
 }
 blockSubs()
+
+// cache functions
+async function checkCacheAndDb(txHash: string) {
+    const cacheTx = await redisClient.get(txHash)
+    // console.log('cacheTx', cacheTx, txHash);
+    // console.log(await redisClient.get("0x53844f9577c2334e541aec7df7174ece5df1fcf0"));
+
+    if (cacheTx) {
+        redisClient.del(txHash)
+        console.log('Deleted tx from cache')
+    }
+
+    return new Promise(function (resolve, reject) {
+        pool.query(
+            // 'INSERT INTO ecall (callTo, callData, callResult) VALUES ($1, $2, $3)',
+            'DELETE FROM ecall WHERE callto = ($1)',
+            [txHash],
+            (err: { stack: any }, res: any) => {
+                if (err) {
+                    // console.error('Error executing query', err.stack);
+                    reject(err)
+                } else {
+                    console.log('Deleted tx from db')
+                    resolve('OK')
+                }
+            }
+        )
+    })
+}

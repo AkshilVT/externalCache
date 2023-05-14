@@ -1,10 +1,12 @@
 import {
     getBlockByHash,
     getBlockByNumber,
+    getEthCall,
     getTransactionByHash,
     writeBlockByNumber,
+    writeEthCall,
 } from './api/dataQuery'
-import { getBlockByNumberFromINFURA } from './api/infuraQuery'
+import { ethcallINFURA, getBlockByNumberFromINFURA } from './api/infuraQuery'
 const bodyParser = require('body-parser')
 
 const express = require('express')
@@ -45,12 +47,8 @@ app.listen(PORT, () => {
 
 // get blockheader
 app.get('/', async (req: any, res: { send: (arg0: string) => void }) => {
-    // const hash = req.query.hash
     const request = req.body
     console.log('request: ', request)
-
-    // const block_details = await getBlockByHash(hash)
-    // console.log("r: ", r);
 
     res.send(JSON.stringify({ status: '200', data: 'Hello World!' }))
 })
@@ -143,49 +141,115 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
         }
     } else if (request.method === 'eth_call') {
         /*-----------------------------------------------------------------
-                ETH_CALL
+    ETH_CALL
     ------------------------------------------------------------------*/
         console.log('eth_call')
-        if (
-            request.params[0].to ===
-            '0x1e8c104d068f22d351859cdbfe41a697a98e6ea2'
-        ) {
-            if (
-                request.params[0].data ===
-                '0xf46eccc40000000000000000000000004284890d4acd0bcb017ece481b96fd4cb457cac8'
-            ) {
-                res.send(
-                    JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: request.id,
-                        result: '0x0000000000000000000000000000000000000000000000000000000000000001',
-                    })
-                )
-            } else if (
-                request.params[0].data ===
-                '0x70a082310000000000000000000000004284890d4acd0bcb017ece481b96fd4cb457cac8'
-            ) {
-                res.send(
-                    JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: request.id,
-                        result: '0x000000000000000000000000000000000000000000679b10238039c2df2aaef3',
-                    })
-                )
-            } else {
-                console.log(request.params[0].data)
-                res.send(
-                    JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: request.id,
-                        result: null,
-                    })
-                )
+        // check if the contract address is in the cache
+        try {
+            let resSend = false
+            const cacheResults = await redisClient.get(request.params[0].to)
+            // console.log('cacheResults: ', cacheResults)
+
+            if (cacheResults) {
+                // console.log(JSON.parse(cacheResults)[request.params[0].data])
+                if (JSON.parse(cacheResults)[request.params[0].data]) {
+                    console.log('cache hit')
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: JSON.parse(cacheResults)[
+                                request.params[0].data
+                            ],
+                        })
+                    )
+                    resSend = true
+                }
             }
-        } else {
+            // check if contract and data are in db
+            if (!resSend) {
+                console.log('cache miss')
+
+                const dbResults: any = await getEthCall(
+                    request.params[0].to,
+                    request.params[0].data
+                )
+                // console.log('dbResults: ', dbResults[0]['callresult'])
+                if (dbResults.length === 1) {
+                    console.log('db hit')
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: dbResults[0]['callresult'],
+                        })
+                    )
+                    resSend = true
+
+                    // write into cache
+                    const key = request.params[0].to
+                    const cacheKey = request.params[0].data
+                    let cacheObj = await redisClient.get(key)
+                    if (!cacheObj) {
+                        cacheObj = {}
+                        cacheObj[cacheKey] = dbResults[0]['callresult']
+                    } else {
+                        cacheObj = JSON.parse(cacheObj)
+                        cacheObj[cacheKey] = dbResults[0]['callresult']
+                    }
+                    console.log(
+                        'Write into Cache: ',
+                        await redisClient.set(key, JSON.stringify(cacheObj))
+                    )
+                } else {
+                    console.log('db miss')
+                    const resultINFURA = await ethcallINFURA(
+                        request.params[0].to,
+                        request.params[0].data
+                    )
+
+                    // write into cache
+                    const key = request.params[0].to
+                    const cacheKey = request.params[0].data
+                    let cacheObj = await redisClient.get(key)
+                    if (!cacheObj) {
+                        cacheObj = {}
+                        cacheObj[cacheKey] = resultINFURA
+                    } else {
+                        cacheObj = JSON.parse(cacheObj)
+                        cacheObj[cacheKey] = resultINFURA
+                    }
+                    console.log(
+                        'Write into Cache: ',
+                        await redisClient.set(key, JSON.stringify(cacheObj))
+                    )
+
+                    // write into db
+                    const db_write = await writeEthCall(
+                        request.params[0].to,
+                        request.params[0].data,
+                        resultINFURA
+                    )
+                    console.log('Write into DB: ', db_write)
+
+                    res.send(
+                        JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: request.id,
+                            result: resultINFURA,
+                        })
+                    )
+                }
+            }
+        } catch (error) {
             res.send(
-                JSON.stringify({ jsonrpc: '2.0', id: request.id, result: null })
+                JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: request.id,
+                    result: null,
+                })
             )
+            console.log(error)
         }
     } else {
         /*-----------------------------------------------------------------
