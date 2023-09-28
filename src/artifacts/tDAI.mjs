@@ -45,23 +45,23 @@ async function sample() {
             .call()
     )
 
-    const data = web3.eth.abi.encodeFunctionCall(
-        {
-            name: 'balanceOf',
-            type: 'function',
-            inputs: [
-                { internalType: 'address', name: 'minter', type: 'address' },
-            ],
-        },
-        ['0x4284890d4AcD0bcb017eCE481B96fD4Cb457CAc8']
-    )
-    console.log(
-        'call:',
-        await web3.eth.call({
-            to: '0x1E8C104D068F22D351859cdBfE41A697A98E6EA2',
-            data: data,
-        })
-    )
+    // const data = web3.eth.abi.encodeFunctionCall(
+    //     {
+    //         name: 'balanceOf',
+    //         type: 'function',
+    //         inputs: [
+    //             { internalType: 'address', name: 'minter', type: 'address' },
+    //         ],
+    //     },
+    //     ['0x4284890d4AcD0bcb017eCE481B96fD4Cb457CAc8']
+    // )
+    // console.log(
+    //     'call:',
+    //     await web3.eth.call({
+    //         to: '0x1E8C104D068F22D351859cdBfE41A697A98E6EA2',
+    //         data: data,
+    //     })
+    // )
 
     // -----------------------------------------------------------------------------------------
 

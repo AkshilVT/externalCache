@@ -45,7 +45,6 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
 
-// get blockheader
 app.get('/', async (req: any, res: { send: (arg0: string) => void }) => {
     const request = req.body
     console.log('request: ', request)
@@ -65,6 +64,8 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void }) => {
                 ETH_GETBLOCKBYNUMBER
     ------------------------------------------------------------------*/
     if (request.method === 'eth_getBlockByNumber') {
+        console.log('eth_getBlockByNumber');
+        
         try {
             // Check if the block is in the cache
             const cacheResults = await redisClient.get(

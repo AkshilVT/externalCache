@@ -7,7 +7,7 @@
     "start": "nodemon src/index.ts",
     "subs": "nodemon src/subscription.ts",
     "format": "prettier --write src/**/*.ts src/**/*.json",
-    "test": "nodemon src/test.ts",
+    "test": "nodemon src/test.js",
     "benchmark": "node src/benchmark/index.mjs"
   },
   "keywords": [],

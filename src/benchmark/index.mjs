@@ -17,18 +17,18 @@ dotenv.config()
 
 async function benchmark() {
     const network = process.env.ETHEREUM_NETWORK
-    // const web3 = new Web3(`http://localhost:4000/`)
+    const web3 = new Web3(`http://localhost:4000/`)
 
     // const web3 = new Web3(
     //     new Web3.providers.WebsocketProvider(
     //         `wss://${network}.infura.io/ws/v3/${process.env.INFURA_API_KEY}`
     //     )
     // )
-    const web3 = new Web3(
-        new Web3.providers.HttpProvider(
-            `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`
-        )
-    )
+    // const web3 = new Web3(
+    //     new Web3.providers.HttpProvider(
+    //         `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`
+    //     )
+    // )
 
     // Contracts --------------------------------------------------------
     var contract1 = new web3.eth.Contract(
@@ -65,13 +65,13 @@ async function benchmark() {
         '0x4284890d4AcD0bcb017eCE481B96fD4Cb457CAc8',
     ]
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10; i++) {
         let start = Date.now()
         const bal = await getRandomItem(contracts)
             .methods.balanceOf(getRandomItem(addresses))
             .call()
         let end = Date.now()
-        writeFile('benchmarkINFURAHttp100.csv', `${end - start}\n`, {
+        writeFile('test.csv', `${end - start}\n`, {
             flag: 'a',
         })
         console.log('bal:', bal, 'time:', end - start)

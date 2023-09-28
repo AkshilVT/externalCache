@@ -13,7 +13,7 @@ const pool = new Pool({
 export function getBlockByHash(blockHash: string) {
     return new Promise(function (resolve, reject) {
         pool.query(
-            'SELECT * FROM blocks WHERE block_hash = $1',
+            'SELECT * FROM blocks WHERE hash = $1',
             [blockHash],
             (err: { stack: any }, res: any) => {
                 if (err) {
@@ -117,7 +117,7 @@ export function writeEthCall(to: string, data: string, result: any) {
             (err: { stack: any }, res: any) => {
                 if (err) {
                     // console.error('Error executing query', err.stack);
-                    reject(err)
+                    // reject(err)
                 } else {
                     // console.log('Connected to Postgres at', res.rows);
                     resolve('OK')
